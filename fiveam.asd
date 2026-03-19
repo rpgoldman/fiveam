@@ -1,5 +1,3 @@
-;;;; -*- Mode: LISP; Syntax: Ansi-Common-Lisp; Base: 10; -*-
-
 #.(unless (or #+asdf3.1 (version<= "3.1" (asdf-version)))
     (error "You need ASDF >= 3.1 to load this system correctly."))
 
@@ -34,3 +32,10 @@
 ;;;;@include "src/package.lisp"
 
 ;;;;@include "t/example.lisp"
+
+
+;; Local Variables:
+;; mode: lisp
+;; syntax: ansi-common-lisp
+;; base: 10
+;; End:
