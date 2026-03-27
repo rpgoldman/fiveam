@@ -205,14 +205,27 @@ run."))
                                (when *print-names*
                                    (format *test-dribble* "~%~ARunning test ~A " *test-dribble-indent* (name test))
                                    (force-output *test-dribble*))
-                               (if (collect-profiling-info test)
-                                   ;; Timing info doesn't get collected ATM, we need a portable library
-                                   ;; (setf (profiling-info test) (collect-timing (test-lambda test)))
-                                   (funcall (test-lambda test))
-                                   (funcall (test-lambda test))))
+                               (handler-bind
+                                   ((storage-condition (lambda (e)
+                                                          (declare (ignorable e))
+                                                          (format t "~&About to print backtrace from storage condition.  On error value = ~s~%" *on-error*)
+                                                          #+sbcl
+                                                          (break "Got storage error.")
+                                                          ;; (let ((*print-pprint-dispatch* (copy-pprint-dispatch nil)))
+                                                          ;;   (sb-debug:backtrace nil *standard-output*))
+                                                          ;; (trivial-backtrace:print-backtrace-to-stream *test-dribble*)
+                                                          #-sbcl
+                                                          (trivial-backtrace:print-backtrace-to-stream *error-output*))))
+                                   (if (collect-profiling-info test)
+                                       ;; Timing info doesn't get collected ATM, we need a portable library
+                                       ;; (setf (profiling-info test) (collect-timing (test-lambda test)))
+                                       (funcall (test-lambda test))
+                                       (funcall (test-lambda test)))))
                            (storage-condition (e)
                              ;; heap-exhausted/constrol-stack-exhausted
                              ;; handler-case unwinds the stack (unlike handler-bind)
+                             (when (eql *on-failure* :backtrace)
+                               (trivial-backtrace:print-backtrace-to-stream *test-dribble*))
                              (abort-test e (format nil "STORAGE-CONDITION: aborted for safety. ~S~%~A." e e))
                              (return-from run-it result-list)))
                        (retest ()
